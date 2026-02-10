@@ -19,10 +19,11 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Clone Moltworker
+      - name: Clone and configure Moltworker
         run: |
           git clone https://github.com/cloudflare/moltworker.git moltworker-build
           cd moltworker-build
+          sed -i 's/"moltbot-sandbox"/"openclaw-ryan"/' wrangler.jsonc
           npm install
 
       - name: Set secrets and deploy
@@ -31,17 +32,17 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "${{ secrets.ANTHROPIC_API_KEY }}" | npx wrangler secret put ANTHROPIC_API_KEY --name openclaw-ryan
-          echo "${{ secrets.MOLTBOT_GATEWAY_TOKEN }}" | npx wrangler secret put MOLTBOT_GATEWAY_TOKEN --name openclaw-ryan
-          echo "${{ secrets.TELEGRAM_BOT_TOKEN }}" | npx wrangler secret put TELEGRAM_BOT_TOKEN --name openclaw-ryan
-          echo "true" | npx wrangler secret put DEV_MODE --name openclaw-ryan
-          echo "pairing" | npx wrangler secret put TELEGRAM_DM_POLICY --name openclaw-ryan
-          echo "10m" | npx wrangler secret put SANDBOX_SLEEP_AFTER --name openclaw-ryan
-          npm run build && npx wrangler deploy --name openclaw-ryan
+          echo "${{ secrets.ANTHROPIC_API_KEY }}" | npx wrangler secret put ANTHROPIC_API_KEY
+          echo "${{ secrets.MOLTBOT_GATEWAY_TOKEN }}" | npx wrangler secret put MOLTBOT_GATEWAY_TOKEN
+          echo "${{ secrets.TELEGRAM_BOT_TOKEN }}" | npx wrangler secret put TELEGRAM_BOT_TOKEN
+          echo "true" | npx wrangler secret put DEV_MODE
+          echo "pairing" | npx wrangler secret put TELEGRAM_DM_POLICY
+          echo "10m" | npx wrangler secret put SANDBOX_SLEEP_AFTER
+          npm run deploy
 
       - name: Done
         run: |
           echo "DEPLOYED! OpenClaw is live on Cloudflare."
-          echo "Worker: openclaw-ryan"
+          echo "Worker: openclaw-ryan.ryan-73c.workers.dev"
           echo "Using Anthropic Claude API"
           echo "Container sleeps after 10m idle to save costs"
