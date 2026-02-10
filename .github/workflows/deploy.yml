@@ -25,124 +25,22 @@ jobs:
           cd moltworker-build
           npm install
 
-      - name: Create OpenClaw configuration
-        run: |
-          mkdir -p moltworker-build/.openclaw
-          mkdir -p moltworker-build/.openclaw/workspace-seenyor
-          mkdir -p moltworker-build/.openclaw/workspace-personal
-          mkdir -p moltworker-build/.openclaw/workspace-research
-          mkdir -p moltworker-build/.openclaw/agents/seenyor
-          mkdir -p moltworker-build/.openclaw/agents/personal
-          mkdir -p moltworker-build/.openclaw/agents/research
-
-          cat > moltworker-build/.openclaw/openclaw.json << 'CONFIGEOF'
-          {
-            "models": {
-              "defaults": {
-                "context_window": 256000,
-                "max_tokens": 8192
-              },
-              "providers": [
-                {
-                  "id": "moonshot",
-                  "type": "openai-compat",
-                  "baseURL": "https://api.moonshot.ai/v1",
-                  "apiKeyVar": "MOONSHOT_API_KEY",
-                  "models": ["kimi-k2.5"]
-                }
-              ]
-            },
-            "agents": {
-              "defaults": {
-                "model": {
-                  "primary": "moonshot/kimi-k2.5",
-                  "temperature": 0.6,
-                  "top_p": 0.95
-                },
-                "maxConcurrent": 2,
-                "subagents": {
-                  "maxConcurrent": 4
-                }
-              },
-              "list": [
-                {
-                  "id": "seenyor",
-                  "name": "Seenyor Business Agent",
-                  "workspace": "~/.openclaw/workspace-seenyor",
-                  "agentDir": "~/.openclaw/agents/seenyor",
-                  "default": true,
-                  "model": { "primary": "moonshot/kimi-k2.5", "temperature": 0.5 }
-                },
-                {
-                  "id": "personal",
-                  "name": "Jarvis Personal Assistant",
-                  "workspace": "~/.openclaw/workspace-personal",
-                  "agentDir": "~/.openclaw/agents/personal",
-                  "model": { "primary": "moonshot/kimi-k2.5", "temperature": 0.7 }
-                },
-                {
-                  "id": "research",
-                  "name": "Research Agent",
-                  "workspace": "~/.openclaw/workspace-research",
-                  "agentDir": "~/.openclaw/agents/research",
-                  "model": { "primary": "moonshot/kimi-k2.5", "temperature": 0.3 }
-                }
-              ]
-            },
-            "bindings": [
-              { "channel": "telegram", "agentId": "seenyor" },
-              { "channel": "telegram", "peer": "group:personal", "agentId": "personal" },
-              { "channel": "telegram", "peer": "group:research", "agentId": "research" }
-            ],
-            "channels": {
-              "telegram": {
-                "enabled": true,
-                "dmPolicy": "pairing",
-                "groups": { "*": { "requireMention": true } }
-              }
-            },
-            "gateway": {
-              "port": 18789,
-              "enableControlUI": true
-            },
-            "security": {
-              "dangerouslyDisableDeviceAuth": false
-            }
-          }
-          CONFIGEOF
-
-          cat > moltworker-build/.openclaw/workspace-seenyor/SOUL.md << 'SOULEOF'
-          # Seenyor Business Agent
-          You are the Seenyor Business Agent. You handle sales, outreach, lead qualification, and business operations for Seenyor, a company selling wireless fall detection sensors for the senior care market. Be professional, action-oriented, and concise. Always suggest next steps. Target customers: alarm dealers, medical distributors, monitoring companies, home care agencies. Never send emails without Ryan's approval. Always show drafts first.
-          SOULEOF
-
-          cat > moltworker-build/.openclaw/workspace-personal/SOUL.md << 'SOULEOF'
-          # Jarvis Personal Assistant
-          You are Jarvis, Ryan's personal AI assistant. Handle daily briefings, task management, scheduling, research, and life admin. Be friendly, casual, and efficient. Morning briefing at 8 AM. End-of-day summary at 6 PM. Weekly review Sunday evenings. Keep Telegram messages short and scannable. If something is Seenyor business, redirect to the Seenyor agent.
-          SOULEOF
-
-          cat > moltworker-build/.openclaw/workspace-research/SOUL.md << 'SOULEOF'
-          # Research Agent
-          You are the Research Agent. Handle deep research, competitive intelligence, data analysis, and report generation. Be methodical, evidence-based, and structured. Always cite sources. Start with an executive summary. Cross-reference findings from multiple sources. Flag when information is from a single source vs corroborated. Never fabricate citations.
-          SOULEOF
-
       - name: Set secrets and deploy
         working-directory: moltworker-build
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "${{ secrets.MOONSHOT_API_KEY }}" | npx wrangler secret put MOONSHOT_API_KEY
+          echo "${{ secrets.ANTHROPIC_API_KEY }}" | npx wrangler secret put ANTHROPIC_API_KEY
           echo "${{ secrets.MOLTBOT_GATEWAY_TOKEN }}" | npx wrangler secret put MOLTBOT_GATEWAY_TOKEN
           echo "${{ secrets.TELEGRAM_BOT_TOKEN }}" | npx wrangler secret put TELEGRAM_BOT_TOKEN
+          echo "true" | npx wrangler secret put DEV_MODE
           echo "pairing" | npx wrangler secret put TELEGRAM_DM_POLICY
-          echo "never" | npx wrangler secret put SANDBOX_SLEEP_AFTER
+          echo "10m" | npx wrangler secret put SANDBOX_SLEEP_AFTER
           npm run deploy
 
       - name: Done
         run: |
-          echo "DEPLOYED! Your 3 agents are live on Cloudflare."
-          echo "1. Seenyor Business Agent (default)"
-          echo "2. Jarvis Personal Assistant"
-          echo "3. Research Agent"
-          echo "Go to Cloudflare Dashboard > Workers to find your URL."
+          echo "DEPLOYED! OpenClaw is live on Cloudflare."
+          echo "Using Anthropic Claude API"
+          echo "Container sleeps after 10m idle to save costs"
