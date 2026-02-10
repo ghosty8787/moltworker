@@ -38,7 +38,7 @@ jobs:
           echo "true" | npx wrangler secret put DEV_MODE
           echo "pairing" | npx wrangler secret put TELEGRAM_DM_POLICY
           echo "10m" | npx wrangler secret put SANDBOX_SLEEP_AFTER
-          npm run deploy
+          npm run deploy # fresh deploy v2
 
       - name: Done
         run: |
